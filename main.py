@@ -2,7 +2,6 @@ from flask import Flask, request
 import requests
 import numpy as np
 import pandas as pd
-from utils import code, misc
 from torch.utils.data import DataLoader
 from models.XFFT import FFT
 from utils.spectra_dataset import *
@@ -47,10 +46,9 @@ models = {
 
 def cosine_similarity(df1, df2=None):
     """
-        计算数据帧df中每行与df2之间的余弦相似度
+        Calculate the cosine similarity between each row in the dataframe df and df2.
     """
     # cos = x*y/|x|*|y|
-    # 计算每一行的L2范数
     dfnorm = df1.apply(np.linalg.norm, axis=1)
     if df2 is None:
         df2 = df1
@@ -58,16 +56,14 @@ def cosine_similarity(df1, df2=None):
     else:
         df2norm = df2.apply(np.linalg.norm, axis=1)
 
-     # 计算余弦相似度
     cosine_sim = df1.dot(df2.T).divide(np.outer(dfnorm, df2norm))
-    # 将余弦相似度存储在数据框中
     sim_df = pd.DataFrame(cosine_sim.values, index=df1.index, columns=df2.index)
 
     return sim_df
 
 def is_similarity(df, testDf, threshold=0.7, ratio=0.75):
     '''
-        testDf与df相似: 需要余弦相似度>threshold,且比例>ratio
+        cosine similarity > threshold,ratio > ratio
     '''
     sim_df = cosine_similarity(df, testDf)
     th_df = (sim_df > threshold).sum()
@@ -105,7 +101,6 @@ def do_predict(fileOrURL, model_name):
             return {'code': 1, 'msg': f'input format invalid, expect: ({X.shape[0], similar_X_df.shape[1]}), current: {X.shape}'}
         
         is_sim = is_similarity(similar_X_df, X)
-        # print('is_sim:', is_sim)
         if is_sim.sum() != len(X):
             return {'code': 2, 'msg': 'Invalid spectral data.'}
 
@@ -136,4 +131,3 @@ def predict():
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
-    #print(do_predict('./data/test_cell.csv', 'cell_exosome'))
